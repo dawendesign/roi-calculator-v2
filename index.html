@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>包租代管全方位財務模型 v5.8 (分潤年限精控版)</title>
+    <style>
+        /* --- 樣式設定 --- */
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --growth-color: #8e44ad;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --success-color: #27ae60;
+            --warning-color: #e67e22;
+            --danger-color: #c0392b;
+            --tax-color: #8e44ad;
+            --cost-color: #7f8c8d;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { max-width: 980px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--primary-color); font-size: 1.8rem; margin-bottom: 5px; }
+        
+        .tab-nav {
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 25px;
+            background: #fff; padding: 10px; border-radius: 50px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-width: 550px; margin: 0 auto 25px auto;
+        }
+        .tab-btn {
+            background: none; border: none; padding: 10px 20px; border-radius: 25px;
+            font-size: 0.95rem; font-weight: 600; color: #666; cursor: pointer; transition: all 0.3s; flex: 1; white-space: nowrap;
+        }
+        .tab-btn.active { color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .tab-btn[data-target="tab-single"].active { background-color: var(--accent-color); }
+        .tab-btn[data-target="tab-growth"].active { background-color: var(--growth-color); }
+        .tab-btn[data-target="tab-bonus"].active { background-color: var(--primary-color); }
+
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--card-bg); border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px; }
+        h2 { font-size: 1.2rem; padding-bottom: 10px; margin-top: 0; color: var(--primary-color); border-bottom: 2px solid #f0f0f0; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #555; }
+        input[type="text"], input[type="number"] {
+            padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1.1rem; width: 100%; box-sizing: border-box; background-color: #fff;
+        }
+        input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+        .note { font-size: 0.75rem; color: #888; margin-top: 5px; line-height: 1.4; }
+
+        .highlight-input input { background-color: #f0f8ff; border-color: #bde0fe; }
+        .risk-input input { background-color: #fff0f0; border-color: #ffcccc; }
+        
+        .results-grid, .dashboard-grid, .financial-matrix { display: grid; gap: 15px; margin-bottom: 10px; }
+        .results-grid { grid-template-columns: repeat(2, 1fr); }
+        .dashboard-grid { grid-template-columns: repeat(3, 1fr); }
+        .financial-matrix { grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        
+        @media (max-width: 600px) { 
+            .results-grid, .dashboard-grid, .financial-matrix { grid-template-columns: 1fr; } 
+        }
+
+        /* Stat Box 樣式 */
+        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        .stat-label { font-size: 0.85rem; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--primary-color); }
+        .stat-sub { font-size: 0.8rem; color: #999; margin-top: 3px; }
+        
+        .text-success { color: var(--success-color); }
+        .text-danger { color: var(--danger-color); }
+        
+        /* 統一底色與邊框，僅用文字區分 */
+        .stat-box.company-gross .stat-value { color: var(--primary-color); }
+        .stat-box.costs .stat-value { color: var(--cost-color); }
+        .stat-box.commission .stat-value { color: var(--warning-color); } 
+        .stat-box.tax .stat-value { color: var(--tax-color); } 
+        
+        .stat-box.net-profit { border: 2px solid #27ae60; background: #eafaf1; }
+        .stat-box.net-profit .stat-value { color: #27ae60; font-size: 2.0rem; }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 10px; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid #eee; text-align: right; white-space: nowrap; }
+        th { background-color: #f1f4f6; color: var(--primary-color); font-weight: 600; }
+        th:first-child, td:first-child { text-align: left; font-weight: bold; color: var(--primary-color); }
+
+        .strategy-box { background-color: #f8fcfd; border: 1px solid #e1eef6; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .risk-box { background-color: #fffbfb; border: 1px solid #fbecec; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .section-divider { display: flex; align-items: center; margin: 25px 0 15px 0; font-size: 0.85rem; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+        .section-divider::before, .section-divider::after { content: ""; flex: 1; border-bottom: 1px solid #eee; }
+        
+        .slider-container { margin-top: 10px; }
+        input[type=range] { width: 100%; margin: 10px 0; cursor: pointer; }
+        .slider-labels { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; }
+
+        .pie-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        @media (max-width: 600px) { .pie-section { grid-template-columns: 1fr; } }
+        .pie-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .pie-chart { width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#eee 0% 100%); margin-bottom: 20px; border:1px solid #f0f0f0; }
+        .pie-legend { width: 100%; font-size: 0.85rem; }
+        .pie-item { display: flex; justify-content: space-between; align-items:center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #f0f0f0; }
+
+        .growth-badge { background: var(--growth-color); color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>包租代管全方位財務模型</h1>
+        <div style="font-size:0.9rem; color:#666;">v5.8 分潤年限精控版 (修正業務堆疊)</div>
+    </header>
+
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-target="tab-single" onclick="switchTab('tab-single')">單一物件分析</button>
+        <button class="tab-btn" data-target="tab-growth" onclick="switchTab('tab-growth')">複利擴張模擬</button>
+        <button class="tab-btn" data-target="tab-bonus" onclick="switchTab('tab-bonus')">營運儀表板</button>
+    </nav>
+
+    <div id="tab-single" class="tab-content active">
+        <section class="card">
+            <h2>1. 單店核心參數</h2>
+            <div class="form-grid">
+                <div class="input-group highlight-input">
+                    <label>初期投入資本</label>
+                    <input type="text" inputmode="numeric" id="s_initialCapital" value="360,000" oninput="calculateSingle();" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+                <div class="input-group highlight-input">
+                    <label>租約年限</label>
+                    <input type="number" id="s_leaseYears" value="5" oninput="calculateSingle(); calculateGrowth();"> 
+                </div>
+                <div class="input-group">
+                    <label>預期月租金收入</label>
+                    <input type="text" inputmode="numeric" id="s_monthlyRentIncome" value="50,000" oninput="calculateSingle()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+                <div class="input-group">
+                    <label>支付房東月租金</label>
+                    <input type="text" inputmode="numeric" id="s_monthlyRentCost" value="30,000" oninput="calculateSingle()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+            </div>
+            
+            <div class="risk-box" style="margin-top:20px;">
+                <div style="font-weight:bold; color:var(--danger-color); margin-bottom:10px;">風險參數設定</div>
+                <div class="form-grid">
+                    <div class="input-group risk-input">
+                        <label>基礎空置率</label>
+                        <input type="text" id="s_vacancyRate" value="5%" oninput="calculateSingle()" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)">
+                    </div>
+                    <div class="input-group risk-input">
+                        <label>維修準備金</label>
+                        <input type="text" id="s_maintReserve" value="5%" placeholder="5%" oninput="calculateSingle()" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)">
+                        <span class="note">針對屋況老化的現金保留</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>2. 收益結果 (含風險調整)</h2>
+            <div class="results-grid">
+                <div class="stat-box">
+                    <div class="stat-label">年度淨現金流</div>
+                    <div class="stat-value" id="s_annualNetCashFlow">-</div>
+                    <div class="stat-sub">扣除空置與維修</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">合約總投報率</div>
+                    <div class="stat-value text-success" id="s_totalROI">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">內部報酬率 (IRR)</div>
+                    <div class="stat-value text-success" id="s_irrValue">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">靜態回本期</div>
+                    <div class="stat-value" id="s_paybackPeriod">-</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="tab-growth" class="tab-content tab-growth">
+        <section class="card">
+            <h2>1. 資本與獲利假設</h2>
+            <div class="form-grid">
+                <div class="input-group highlight-input">
+                    <label>初始總資金</label>
+                    <input type="text" id="g_initialCapital" value="1,000,000" oninput="calculateGrowth()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+                <div class="input-group">
+                    <label>單間標準啟動成本</label>
+                    <input type="text" id="g_costPerUnit" value="360,000" oninput="calculateGrowth()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+                <div class="input-group">
+                    <label>單間標準年淨利</label>
+                    <input type="text" id="g_annualProfit" value="180,000" oninput="calculateGrowth()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+            </div>
+
+            <div class="risk-box" style="margin-top:15px;">
+                <div style="font-weight:bold; color:var(--danger-color); margin-bottom:10px;">去偏差化設定 (De-biasing)</div>
+                <div class="form-grid">
+                    <div class="input-group risk-input">
+                        <label>邊際成本遞增係數</label>
+                        <input type="number" id="g_difficultyFactor" value="2" placeholder="2" oninput="calculateGrowth()">
+                        <span class="note">每增加 10 間，開發成本上升 N%</span>
+                    </div>
+                    <div class="input-group risk-input">
+                        <label>規模化空置懲罰</label>
+                        <input type="number" id="g_scaleRisk" value="50" placeholder="50" oninput="calculateGrowth()">
+                        <span class="note">超過 N 間後，平均空置率強制上升 2%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>2. 擴張策略</h2>
+            <div class="strategy-box">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>階段一：全投入期</label>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span>前</span>
+                            <input type="number" id="g_forceYears" value="3" style="width:70px; text-align:center;" oninput="calculateGrowth()">
+                            <span>年</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>階段二：利潤分配</label>
+                        <div class="slider-container">
+                            <div class="slider-labels">
+                                <span style="color:var(--growth-color)">再投資: <span id="reinvestText">50%</span></span>
+                                <span style="color:var(--success-color)">分潤: <span id="profitText">50%</span></span>
+                            </div>
+                            <input type="range" id="g_splitSlider" min="0" max="100" value="70" oninput="calculateGrowth()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>3. 十年預測 (考慮邊際遞減)</h2>
+            <div class="dashboard-grid">
+                <div class="stat-box">
+                    <div class="stat-label">第10年持有規模</div>
+                    <div class="stat-value" id="g_finalUnits">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">10年累計落袋現金</div>
+                    <div class="stat-value text-success" id="g_totalPocketMoney">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">第10年單間開發成本</div>
+                    <div class="stat-value text-danger" id="g_finalCAC">-</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="g_growthTable">
+                    <thead>
+                        <tr>
+                            <th>年度</th>
+                            <th>期初</th>
+                            <th>開發成本(CAC)</th>
+                            <th>新增/到期</th>
+                            <th>期末間數</th>
+                            <th>總淨利(含風險)</th>
+                            <th>股東分潤</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <div id="tab-bonus" class="tab-content tab-bonus">
+        <section class="card">
+            <h2>1. 綜合營運參數</h2>
+            <div class="form-grid" style="background:#f0f4f8; padding:15px; border-radius:8px; margin-bottom:15px;">
+                <div class="input-group">
+                    <label style="color:var(--primary-color);">預測年度 (第 N 年)</label>
+                    <input type="number" id="b_predictYears" value="1" min="1" max="10" oninput="calculateBonus()">
+                </div>
+                <div class="input-group">
+                    <label>業務團隊人數</label>
+                    <input type="number" id="b_salesHeadcount" value="1" min="1" oninput="calculateBonus()">
+                </div>
+                <div class="input-group risk-input">
+                    <label>客戶自然流失率</label>
+                    <input type="text" id="b_churnRate" value="10%" oninput="calculateBonus()" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)">
+                </div>
+            </div>
+
+            <div class="section-divider">市場行情與收費設定</div>
+            <div class="form-grid">
+                <div class="input-group highlight-input">
+                    <label>平均每戶月租金</label>
+                    <input type="text" id="b_avgRent" value="25,000" oninput="calculateBonus()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+                <div class="input-group highlight-input">
+                    <label>平均裝潢總價</label>
+                    <input type="text" id="b_avgRenoPrice" value="800,000" oninput="calculateBonus()" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)">
+                </div>
+                 <div class="input-group highlight-input">
+                    <label>裝潢專案毛利率</label>
+                    <input type="text" id="b_renoMargin" value="15%" oninput="calculateBonus()" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)">
+                    <span class="note">公司能保留的利潤 %</span>
+                </div>
+                <div class="input-group highlight-input">
+                    <label>代管費率 (Service Fee)</label>
+                    <input type="text" id="b_mgmtFeePct" value="10%" oninput="calculateBonus()" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)">
+                </div>
+            </div>
+            
+            <div class="section-divider">單人月產能 (開發案件數/月)</div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>純代租 (件/月)</label>
+                    <input type="number" id="b_volRentOnly" value="2" step="0.5" oninput="calculateBonus()">
+                </div>
+                <div class="input-group">
+                    <label>純代管 (件/月)</label>
+                    <input type="number" id="b_volMgmtOnly" value="1" step="0.5" oninput="calculateBonus()">
+                </div>
+                <div class="input-group">
+                    <label>代管+裝潢 (件/月)</label>
+                    <input type="number" id="b_volFull" value="0.5" step="0.1" oninput="calculateBonus()">
+                </div>
+                <div class="input-group">
+                    <label>居家裝潢 (件/月)</label>
+                    <input type="number" id="b_volHomeReno" value="0" step="0.1" oninput="calculateBonus()">
+                </div>
+            </div>
+        </section>
+        
+        <section class="card" style="border-left: 5px solid var(--accent-color);">
+            <details open>
+                <summary style="cursor:pointer; font-weight:bold; color:var(--primary-color); font-size:1.1rem; padding:5px 0;">
+                 點此收合：業務獎金制度設定
+              </summary>
+        
+                <div class="form-grid" style="margin-top:15px; padding-top:15px; border-top:1px dashed #eee;">
+                  <div class="input-group highlight-input">
+                      <label>純代租獎金 %</label>
+                        <input type="text" id="b_rateRent" value="60%" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)" oninput="calculateBonus()">
+                        <span class="note">基數：半個月租金</span>
+                  </div>
+                 <div class="input-group highlight-input">
+                        <label>代管費分潤 %</label>
+                     <input type="text" id="b_rateMgmt" value="20%" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)" oninput="calculateBonus()">
+                     <span class="note">基數：每月管理費</span>
+                    </div>
+                    
+                    <div class="input-group risk-input" style="border:1px solid #ffcccc; padding:5px; border-radius:5px;">
+                        <label style="color:var(--danger-color);">代管分潤年限 (年)</label>
+                        <input type="number" id="b_commDuration" value="5" min="1" max="20" oninput="calculateBonus()">
+                        <span class="note">設定1=僅領第1年<br>設定10=長期分潤</span>
+                     </div>
+
+                    <div class="input-group highlight-input">
+                       <label>裝潢介紹費 %</label>
+                       <input type="text" id="b_rateReno" value="2%" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)" oninput="calculateBonus()">
+                     <span class="note">基數：裝潢總價</span>
+                 </div>
+              </div>
+           </details>
+        </section>
+        
+        <section class="card">
+            <h2>2. 成本結構與稅務</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>助理/基層門檻 (戶/人)</label>
+                    <input type="number" id="b_assistThreshold" value="80" oninput="calculateBonus()">
+                </div>
+                 <div class="input-group risk-input">
+                    <label>高階後勤門檻 (戶)</label>
+                    <input type="number" id="b_adminThreshold" value="150" oninput="calculateBonus()">
+                </div>
+                <div class="input-group">
+                    <label>助理月薪</label>
+                    <input type="text" id="b_assistSalary" value="38,000" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)" oninput="calculateBonus()">
+                </div>
+                <div class="input-group risk-input">
+                    <label>高階後勤月薪</label>
+                    <input type="text" id="b_adminSalary" value="65,000" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)" oninput="calculateBonus()">
+                </div>
+                <div class="input-group">
+                    <label>固定雜支</label>
+                    <input type="text" id="b_fixedCost" value="50,000" onblur="formatMoneyInput(this)" onfocus="unformatMoneyInput(this)" oninput="calculateBonus()">
+                </div>
+            </div>
+
+            <div class="section-divider">稅務預留</div>
+            <div class="form-grid">
+                <div class="input-group risk-input">
+                    <label>營業稅 (5%)</label>
+                    <input type="text" id="b_vatRate" value="5%" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)" oninput="calculateBonus()">
+                </div>
+                <div class="input-group risk-input">
+                    <label>營所稅 (20%)</label>
+                    <input type="text" id="b_taxRate" value="20%" onblur="formatPercentInput(this)" onfocus="unformatPercentInput(this)" oninput="calculateBonus()">
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>3. 財務損益表</h2>
+            <div class="financial-matrix">
+                <div class="stat-box total-revenue">
+                    <div class="stat-label">年度總營收</div>
+                    <div class="stat-value" id="b_grossRevenue">-</div>
+                    <div class="stat-sub">含代管費堆疊效應</div>
+                </div>
+                <div class="stat-box commission">
+                    <div class="stat-label">業務總薪獎 (佣金)</div>
+                    <div class="stat-value" id="b_totalCommission">-</div>
+                    <div class="stat-sub">業績抽成 + 獎金支出</div>
+                </div>
+
+                <div class="stat-box company-gross">
+                    <div class="stat-label">公司稅前毛利</div>
+                    <div class="stat-value" id="b_grossProfit">-</div>
+                    <div class="stat-sub">營收 - 業務佣金</div>
+                </div>
+                <div class="stat-box costs">
+                    <div class="stat-label">固定營運成本</div>
+                    <div class="stat-value" id="b_totalOpEx">-</div>
+                    <div class="stat-sub">人力 + 房租 + 後勤</div>
+                </div>
+                
+                <div class="stat-box tax">
+                    <div class="stat-label">稅務總支出</div>
+                    <div class="stat-value" id="b_totalTax">-</div>
+                    <div class="stat-sub">營業稅 + 營所稅</div>
+                </div>
+                <div class="stat-box net-profit">
+                    <div class="stat-label">年度稅後淨利</div>
+                    <div class="stat-value" id="b_netIncome">-</div>
+                    <div class="stat-sub">真實落袋現金</div>
+                </div>
+            </div>
+
+            <div class="section-divider">收入結構</div>
+            <div class="pie-section">
+                <div class="pie-card">
+                    <div class="pie-chart" id="pie_income"></div>
+                    <div class="pie-legend" id="legend_income"></div>
+                </div>
+                <div class="pie-card" style="justify-content:center; text-align:center;">
+                    <div style="font-size:0.9rem; color:#666; margin-bottom:10px;">後勤人力配置建議</div>
+                    <div style="font-size:2rem; font-weight:bold; color:#2c3e50;" id="b_headcount_suggest">-</div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    // --- 共用工具函數 ---
+    function parseMoney(str) { return Number(String(str).replace(/,/g, '')) || 0; }
+    function parsePercent(str) { return Number(String(str).replace(/%/g, '')) || 0; }
+    function formatMoneyInput(el) { if(el.value.trim() !== '') el.value = new Intl.NumberFormat('zh-TW').format(parseMoney(el.value)); }
+    function unformatMoneyInput(el) { if(el.value.trim() !== '') el.value = parseMoney(el.value); el.select(); }
+    function formatPercentInput(el) { if(el.value.trim() !== '') el.value = parsePercent(el.value) + '%'; }
+    function unformatPercentInput(el) { if(el.value.trim() !== '') el.value = parsePercent(el.value); el.select(); }
+    function fmtMoney(n) { return "$" + new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 }).format(Math.floor(n)); }
+
+    // --- 全局變數 ---
+    let g_yearlyData = []; 
+
+    // --- Tab 切換 ---
+    function switchTab(targetId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById(targetId).classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.dataset.target === targetId) btn.classList.add('active');
+        });
+        if(targetId === 'tab-bonus') {
+            calculateGrowth(); 
+            calculateBonus();
+        }
+    }
+
+    window.onload = function() {
+        document.querySelectorAll('input[type="text"]').forEach(el => {
+            if(el.value.includes('%')) return;
+            formatMoneyInput(el);
+        });
+        calculateSingle();
+        calculateGrowth();
+        calculateBonus();
+    };
+
+    // ==========================================
+    // 1. 單一物件 
+    // ==========================================
+    function calculateSingle() {
+        const initialCap = parseMoney(document.getElementById('s_initialCapital').value);
+        const leaseYears = Number(document.getElementById('s_leaseYears').value) || 5;
+        const monthlyIncome = parseMoney(document.getElementById('s_monthlyRentIncome').value);
+        const monthlyCost = parseMoney(document.getElementById('s_monthlyRentCost').value);
+        const vacancyRate = parsePercent(document.getElementById('s_vacancyRate').value) / 100;
+        const maintReserve = parsePercent(document.getElementById('s_maintReserve').value) / 100;
+
+        if (initialCap === 0) return;
+
+        const annualGross = monthlyIncome * 12;
+        const annualVacancyLoss = annualGross * vacancyRate;
+        const annualMaintCost = annualGross * maintReserve;
+        const annualRentPay = monthlyCost * 12;
+        const annualNet = annualGross - annualVacancyLoss - annualMaintCost - annualRentPay;
+        const totalNetProfit = (annualNet * leaseYears) - initialCap;
+        const roi = (totalNetProfit / initialCap) * 100;
+        const payback = initialCap / annualNet;
+
+        document.getElementById('s_annualNetCashFlow').textContent = fmtMoney(annualNet);
+        const roiEl = document.getElementById('s_totalROI');
+        roiEl.textContent = roi.toFixed(1) + '%';
+        roiEl.className = 'stat-value ' + (roi >= 0 ? 'text-success' : 'text-danger');
+
+        let cashflows = [-initialCap];
+        for(let i=0; i<leaseYears; i++) cashflows.push(annualNet);
+        let irr = estimateIRR(cashflows);
+        document.getElementById('s_irrValue').textContent = (irr * 100).toFixed(2) + '%';
+        document.getElementById('s_paybackPeriod').textContent = (annualNet <= 0) ? "無法回本" : payback.toFixed(1) + " 年";
+    }
+
+    function estimateIRR(values) {
+        let guess = 0.1;
+        for (let i = 0; i < 100; i++) {
+            let npv = 0, d_npv = 0;
+            for (let t = 0; t < values.length; t++) {
+                npv += values[t] / Math.pow(1 + guess, t);
+                d_npv += -t * values[t] / Math.pow(1 + guess, t + 1);
+            }
+            if (Math.abs(npv) < 0.0001) return guess;
+            let newGuess = guess - (npv / d_npv);
+            if (isNaN(newGuess) || Math.abs(newGuess) > 1000) return 0; 
+            guess = newGuess;
+        }
+        return guess;
+    }
+
+    // ==========================================
+    // 2. 複利擴張
+    // ==========================================
+    function calculateGrowth() {
+        const initialFund = parseMoney(document.getElementById('g_initialCapital').value);
+        const baseCost = parseMoney(document.getElementById('g_costPerUnit').value);
+        const baseProfit = parseMoney(document.getElementById('g_annualProfit').value);
+        const leaseTerm = Number(document.getElementById('s_leaseYears').value) || 5;
+        const difficultyFactor = Number(document.getElementById('g_difficultyFactor').value) || 0; 
+        const scaleRiskThreshold = Number(document.getElementById('g_scaleRisk').value) || 50; 
+        const forceYears = Number(document.getElementById('g_forceYears').value);
+        const splitPct = Number(document.getElementById('g_splitSlider').value);
+        const reinvestRate = splitPct / 100;
+
+        document.getElementById('reinvestText').textContent = splitPct + "%";
+        document.getElementById('profitText').textContent = (100 - splitPct) + "%";
+
+        let currentCash = initialFund;
+        let units = 0;
+        let unitsHistory = []; 
+        let totalPocket = 0;
+        
+        g_yearlyData = [];
+        let tableHtml = '';
+        
+        let firstCost = baseCost;
+        let startUnits = Math.floor(currentCash / firstCost);
+        currentCash -= startUnits * firstCost;
+        units = startUnits;
+        unitsHistory.push(units);
+
+        for(let year=1; year<=10; year++) {
+            let isAccumulationPhase = year <= forceYears;
+            let currentReinvestRate = isAccumulationPhase ? 1.0 : reinvestRate;
+
+            let expired = 0;
+            let expireIdx = year - leaseTerm - 1; 
+            if (expireIdx >= 0) {
+                let unitsAtExpYear = unitsHistory[expireIdx];
+                let unitsAtPrevYear = (expireIdx > 0) ? unitsHistory[expireIdx-1] : 0;
+                expired = Math.max(0, unitsAtExpYear - unitsAtPrevYear);
+                if (year === (1 + leaseTerm)) expired = unitsHistory[0];
+            }
+            
+            let effectiveProfitPerUnit = baseProfit;
+            if (units > scaleRiskThreshold) {
+                effectiveProfitPerUnit = baseProfit * 0.98; 
+            }
+            
+            let grossProfit = units * effectiveProfitPerUnit;
+            let reinvestAmount = grossProfit * currentReinvestRate;
+            let pocketAmount = grossProfit * (1 - currentReinvestRate);
+            totalPocket += pocketAmount;
+            
+            currentCash += reinvestAmount;
+            let inflationRate = (Math.floor(units / 10) * difficultyFactor) / 100;
+            let currentCAC = baseCost * (1 + inflationRate);
+            let unitsAfterExpire = units - expired;
+            let newUnits = Math.floor(currentCash / currentCAC);
+            currentCash -= newUnits * currentCAC;
+            units = unitsAfterExpire + newUnits;
+            unitsHistory.push(units);
+            
+            g_yearlyData.push({ year: year, units: units, profit: grossProfit, pocket: pocketAmount });
+            
+            let growthBadge = newUnits > 0 ? `<span class="growth-badge">+${newUnits}</span>` : '-';
+            let cacDisplay = fmtMoney(currentCAC);
+            if (inflationRate > 0) cacDisplay += ` <span style="font-size:0.75rem; color:#c0392b;">(+${(inflationRate*100).toFixed(0)}%)</span>`;
+
+            tableHtml += `
+                <tr>
+                    <td>第 ${year} 年</td>
+                    <td>${units - newUnits + expired}</td>
+                    <td>${cacDisplay}</td>
+                    <td>${growthBadge} / <span style="color:var(--danger-color)">-${expired}</span></td>
+                    <td style="font-weight:bold;">${units}</td>
+                    <td>${fmtMoney(grossProfit)}</td>
+                    <td class="text-success">${fmtMoney(pocketAmount)}</td>
+                </tr>
+            `;
+            if (year === 10) {
+                document.getElementById('g_finalUnits').textContent = units + " 間";
+                document.getElementById('g_totalPocketMoney').textContent = fmtMoney(totalPocket);
+                document.getElementById('g_finalCAC').textContent = fmtMoney(currentCAC);
+            }
+        }
+        document.querySelector('#g_growthTable tbody').innerHTML = tableHtml;
+    }
+
+    // ==========================================
+    // 3. 營運儀表板 
+    // ==========================================
+    function calculateBonus() {
+        const predictYear = Number(document.getElementById('b_predictYears').value);
+        const headcount = Number(document.getElementById('b_salesHeadcount').value);
+        const churnRate = parsePercent(document.getElementById('b_churnRate').value) / 100;
+        const avgRent = parseMoney(document.getElementById('b_avgRent').value) || 25000;
+        const renoPrice = parseMoney(document.getElementById('b_avgRenoPrice').value) || 800000; 
+        const renoMargin = parsePercent(document.getElementById('b_renoMargin').value) / 100;
+        const mgmtFeePct = parsePercent(document.getElementById('b_mgmtFeePct').value) / 100;
+        
+        // 分潤年限
+        const commDuration = Number(document.getElementById('b_commDuration').value) || 1;
+
+        const vRent = Number(document.getElementById('b_volRentOnly').value);
+        const vMgmt = Number(document.getElementById('b_volMgmtOnly').value);
+        const vFull = Number(document.getElementById('b_volFull').value);
+        const vHome = Number(document.getElementById('b_volHomeReno').value);
+        
+        const rentFeePct = 0.5; 
+        const com_Rent = parsePercent(document.getElementById('b_rateRent').value) / 100;
+        const com_Mgmt = parsePercent(document.getElementById('b_rateMgmt').value) / 100;
+        const com_Reno = parsePercent(document.getElementById('b_rateReno').value) / 100;
+        
+        const assistThreshold = Number(document.getElementById('b_assistThreshold').value);
+        const adminThreshold = Number(document.getElementById('b_adminThreshold').value);
+        const salaryAssist = parseMoney(document.getElementById('b_assistSalary').value);
+        const salaryAdmin = parseMoney(document.getElementById('b_adminSalary').value);
+        const fixedCostBase = parseMoney(document.getElementById('b_fixedCost').value);
+        const vatRate = parsePercent(document.getElementById('b_vatRate').value) / 100;
+        const taxRate = parsePercent(document.getElementById('b_taxRate').value) / 100;
+
+        // --- 存量計算 (Revenue Base) ---
+        // 模擬每年新增與累積
+        let accumulatedUnits = 0; 
+        let newUnitsPerYear = (vMgmt + vFull) * headcount * 12;
+
+        for (let y = 1; y < predictYear; y++) {
+            accumulatedUnits = accumulatedUnits * (1 - churnRate); 
+            accumulatedUnits += newUnitsPerYear; 
+        }
+
+        // 公司視角：所有案件都是營收
+        let unitsRetained = accumulatedUnits * (1 - churnRate); // 舊存量
+        let revenueFromOldStock = unitsRetained * avgRent * mgmtFeePct * 12; // 舊的一整年
+        let revenueFromNewGrowth = newUnitsPerYear * avgRent * mgmtFeePct * 6.5; // 新的半年
+
+        let rev_Mgmt_Total = revenueFromOldStock + revenueFromNewGrowth; // 公司總代管營收
+        let totalMgmtUnits = unitsRetained + newUnitsPerYear;
+
+        // --- 業務佣金計算 (Commission Base) ---
+        // 核心邏輯修正：業務只能領取 "CommDuration" 內的案件分潤
+        // 例如：若年限=1，業務只領「今年新增案件」的分潤
+        // 若年限=2，業務領「今年新增」+「去年新增且存活」的分潤
+        
+        let comm_Base_Revenue = 0;
+
+        // 1. 計算今年新增案件的貢獻 (永遠算在分潤內)
+        let comm_Rev_New = newUnitsPerYear * avgRent * mgmtFeePct * 6.5;
+        comm_Base_Revenue += comm_Rev_New;
+
+        // 2. 計算過去 N-1 年「存活下來」的舊案件貢獻
+        // 往前追溯 (commDuration - 1) 年
+        // 公式：NewUnits * (1-churn)^1 + NewUnits * (1-churn)^2 ...
+        // 這些舊案件貢獻的是 12 個月營收
+        
+        if (commDuration > 1) {
+            let pastYearsToCount = commDuration - 1; 
+            // 實際能追溯的年分不能超過現在是第幾年 (predictYear)
+            // 例如：現在是第3年，分潤年限10年，我們只能追溯到第1, 2年 (共2年)
+            let feasibleYears = Math.min(pastYearsToCount, predictYear - 1);
+            
+            let survivingOldUnits = 0;
+            // 使用等比級數求和或簡單迴圈
+            for (let t = 1; t <= feasibleYears; t++) {
+                // t 年前的新增量，經過 t 年的流失
+                survivingOldUnits += newUnitsPerYear * Math.pow((1 - churnRate), t);
+            }
+            
+            let comm_Rev_Old = survivingOldUnits * avgRent * mgmtFeePct * 12;
+            comm_Base_Revenue += comm_Rev_Old;
+        }
+
+        // 其他一次性營收
+        let countRent = vRent * headcount * 12;
+        let countReno = (vFull + vHome) * headcount * 12;
+        let rev_Rent = countRent * (avgRent * rentFeePct);
+        let renoProfitAsRevenue = countReno * renoPrice * renoMargin; 
+        
+        let subleaseProfit = 0;
+        if (g_yearlyData[predictYear-1]) subleaseProfit = g_yearlyData[predictYear-1].profit;
+        
+        let grossRevenue = rev_Rent + rev_Mgmt_Total + renoProfitAsRevenue + subleaseProfit;
+        
+        // 佣金計算 (使用修正後的 comm_Base_Revenue)
+        let cost_Com_Rent = rev_Rent * com_Rent;
+        let cost_Com_Mgmt = comm_Base_Revenue * com_Mgmt; // 關鍵修正！
+        let cost_Com_Reno = countReno * renoPrice * com_Reno; 
+        
+        let totalCommission = cost_Com_Rent + cost_Com_Mgmt + cost_Com_Reno;
+        let companyGrossProfit = grossRevenue - totalCommission;
+
+        let subleaseUnits = g_yearlyData[predictYear-1] ? g_yearlyData[predictYear-1].units : 0;
+        let totalUnitsManaged = totalMgmtUnits + subleaseUnits;
+        let numAssist = Math.floor(totalUnitsManaged / assistThreshold);
+        let numAdmin = (totalUnitsManaged > adminThreshold) ? 1 : 0; 
+        let cost_Labor = (numAssist * salaryAssist * 13) + (numAdmin * salaryAdmin * 13);
+        let cost_Fixed = fixedCostBase * 12;
+        let totalOpEx = cost_Labor + cost_Fixed;
+
+        let ebitda = companyGrossProfit - totalOpEx;
+        let val_VAT = grossRevenue * vatRate; 
+        let val_CorpTax = Math.max(0, (ebitda - val_VAT) * taxRate); 
+        let netIncome = ebitda - val_VAT - val_CorpTax;
+
+        // UI
+        document.getElementById('b_grossRevenue').textContent = fmtMoney(grossRevenue);
+        document.getElementById('b_totalCommission').textContent = fmtMoney(totalCommission);
+        document.getElementById('b_grossProfit').textContent = fmtMoney(companyGrossProfit);
+        document.getElementById('b_totalOpEx').textContent = fmtMoney(totalOpEx);
+        document.getElementById('b_totalTax').textContent = fmtMoney(val_VAT + val_CorpTax);
+        document.getElementById('b_totalTax').nextElementSibling.textContent = `營業稅: ${fmtMoney(val_VAT)} | 營所稅: ${fmtMoney(val_CorpTax)}`;
+
+        let niEl = document.getElementById('b_netIncome');
+        niEl.textContent = fmtMoney(netIncome);
+        niEl.style.color = netIncome > 0 ? '#27ae60' : '#c0392b';
+
+        document.getElementById('b_headcount_suggest').innerHTML = `
+            <div style="font-size:1rem; display:flex; gap:15px; justify-content:center;">
+                <div>助理: <b>${numAssist}</b> 人</div>
+                <div>經理: <b>${numAdmin}</b> 人</div>
+            </div>
+            <div style="font-size:0.8rem; color:#999; margin-top:5px;">總管理: ${Math.floor(totalUnitsManaged)} 戶</div>
+        `;
+
+        updatePie(grossRevenue, rev_Rent, rev_Mgmt_Total, renoProfitAsRevenue, subleaseProfit);
+    }
+
+    function updatePie(total, rent, mgmt, reno, sub) {
+        if(total <= 0) return;
+        const pRent = (rent/total)*100;
+        const pMgmt = (mgmt/total)*100;
+        const pReno = (reno/total)*100;
+        const pSub = (sub/total)*100;
+        
+        const cRent = '#3498db';
+        const cMgmt = '#f1c40f';
+        const cReno = '#9b59b6';
+        const cSub = '#e74c3c';
+        
+        let grad = `conic-gradient(${cRent} 0% ${pRent}%, ${cMgmt} ${pRent}% ${pRent+pMgmt}%, ${cReno} ${pRent+pMgmt}% ${pRent+pMgmt+pReno}%, ${cSub} ${pRent+pMgmt+pReno}% 100%)`;
+        document.getElementById('pie_income').style.background = grad;
+        
+        let legendHtml = `
+            <div class="pie-item"><span style="color:${cRent}">■ 純代租</span> <span>${fmtMoney(rent)}</span></div>
+            <div class="pie-item"><span style="color:${cMgmt}">■ 代管費</span> <span>${fmtMoney(mgmt)}</span></div>
+            <div class="pie-item"><span style="color:${cReno}">■ 裝潢毛利</span> <span>${fmtMoney(reno)}</span></div>
+            <div class="pie-item"><span style="color:${cSub}">■ 包租淨利</span> <span>${fmtMoney(sub)}</span></div>
+        `;
+        document.getElementById('legend_income').innerHTML = legendHtml;
+    }
+</script>
+</body>
+</html>
